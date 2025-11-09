@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 const AdminLogin = ({ onLogin }) => {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  // Seguridad: si por alguna razón sigue undefined, usar fallback conocido
+  const baseUrl = API_BASE_URL || 'hhttps://clinical-seem-hartford-metallic.trycloudflare.com';
 
   // Si ya hay sesión guardada, redirigir directamente
   useEffect(() => {
@@ -22,7 +26,7 @@ const AdminLogin = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+  const response = await fetch(`${baseUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, password }),

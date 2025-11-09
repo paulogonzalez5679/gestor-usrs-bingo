@@ -18,7 +18,8 @@ import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const API_BASE_URL = 'http://localhost:5000';
+//const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
 axios.defaults.baseURL = API_BASE_URL;
 
 const Reports = () => {

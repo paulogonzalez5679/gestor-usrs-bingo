@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 // Configuración base de axios
-const API_BASE_URL = 'http://localhost:5000'; // Ajusta esto según tu configuración del backend
+//const API_BASE_URL = 'http://localhost:5000';  Ajusta esto según tu configuración del backend
+const API_BASE_URL = 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
 axios.defaults.baseURL = API_BASE_URL;
 
 const AddUserForm = () => {

@@ -4,7 +4,8 @@ import { Search, Plus, Eye, Trash2, ArrowLeft, Award, X, Loader } from 'lucide-r
 import { useParams, Link, useNavigate } from 'react-router-dom';  
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000';
+//const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
 axios.defaults.baseURL = API_BASE_URL;
 
 /**

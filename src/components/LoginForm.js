@@ -10,7 +10,8 @@ const LoginForm = ({ onLogin }) => {
     e.preventDefault();
 
     try {
-      const url = "http://127.0.0.1:5000/api/login";
+      const API_BASE_URL = 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
+      const url = `${API_BASE_URL}/api/login`
 
       const body = {
         usuario: usuario.toUpperCase(), // 👈 convierte el usuario a mayúsculas

@@ -24,7 +24,7 @@ const resolveApiBase = () => {
   }
 
   // 3) Fallback
-  return 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
+  return 'http://127.0.0.1:5000';
 };
 
 export const API_BASE_URL = resolveApiBase();

@@ -6,7 +6,7 @@ import axios from 'axios';
 
 // Configuración base de axios
 //const API_BASE_URL = 'http://localhost:5000';  Ajusta esto según tu configuración del backend
-const API_BASE_URL = 'https://remote-aka-contracting-vocabulary.trycloudflare.com';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 axios.defaults.baseURL = API_BASE_URL;
 
 const AddUserForm = () => {
@@ -217,7 +217,7 @@ const AddUserForm = () => {
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="alumno">Alumno</option>
-              <option value="docente">Externo</option>
+              <option value="docente">Docente</option>
             </select>
           </fieldset>
           {!showAnimador && (
@@ -233,6 +233,7 @@ const AddUserForm = () => {
               />
             </fieldset>
           )}
+          {showAnimador && (
           <fieldset>
             {/* 🆕 Campo de grupo Adetits */}
             <legend className="text-lg font-semibold text-yellow-500 mb-4">Número de grupo ADETITSS</legend>
@@ -245,6 +246,8 @@ const AddUserForm = () => {
               type="number"
             />
           </fieldset>
+          )}
+
 
           {/* Datos Personales */}
           <fieldset>

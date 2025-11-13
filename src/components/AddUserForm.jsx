@@ -23,6 +23,9 @@ const AddUserForm = () => {
     grupoAdetitss: '',
   });
 
+  const showAcademic = formData.tipo === 'alumno';
+  const showDocente = formData.tipo === 'docente';
+  const showExterno = formData.tipo === 'externo';
 
   const [isLoading, setIsLoading] = useState(false);
   const [tablasCount, setTablasCount] = useState(1);
@@ -32,11 +35,25 @@ const AddUserForm = () => {
   const user = JSON.parse(userStr);
   let nivelCurso = '';
 
-  useEffect(() => {
-    if (formData.tipo === 'docente') {
-      setFormData(prev => ({ ...prev, nivelCurso: '', paralelo: '', animador: '' }));
-    }
-  }, [formData.tipo]);
+useEffect(() => {
+  // Recalcular total
+  const total = calcularTotal(formData.tablas.filter(t => t.trim() !== '').length);
+  setTotalPagar(total);
+
+  // Limpiar si es docente y aún tiene valores académicos
+  if (
+    formData.tipo === 'docente' &&
+    (formData.nivelCurso !== '' || formData.paralelo !== '' || formData.animador !== '')
+  ) {
+    setFormData(prev => ({
+      ...prev,
+      nivelCurso: '',
+      paralelo: '',
+      animador: ''
+    }));
+  }
+}, [formData.tablas, formData.tipo]);
+
 
   const buscarDatosEstudiante = async (cedula) => {
     setIsLoading(true);
@@ -84,6 +101,32 @@ const AddUserForm = () => {
       console.error('Error al buscar estudiante:', error);
       if (error.response?.status === 404) {
         alert('No se encontró ningún estudiante con esta cédula');
+      } else {
+        alert('Error al conectar con el servidor. Por favor, intente nuevamente');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+    const buscarDatosDocente = async (cedula) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`/api/docente/${cedula}`);
+      if (response.data && response.data.success && response.data.docente) {
+        console.log('Datos del docente encontrados:', response.data);
+        const docente = response.data.docente;
+
+        setFormData(prev => ({
+          ...prev,
+          nombre: docente.Nombre,
+          apellido: docente.Apellidos,
+          cedula: docente["Cedula"] || cedula
+        }));
+      }
+    } catch (error) {
+      console.error('Error al buscar docente:', error);
+      if (error.response?.status === 404) {
+        alert('No se encontró ningún docente con esta cédula');
       } else {
         alert('Error al conectar con el servidor. Por favor, intente nuevamente');
       }
@@ -177,17 +220,33 @@ const AddUserForm = () => {
     }
   };
 
-  const showAcademic = formData.tipo === 'alumno';
-  const showAnimador = formData.tipo === 'docente';
+  const handleTipoChange = (e) => {
+  const nuevoTipo = e.target.value;
+
+  // Reinicia el formulario completamente
+  setFormData({
+    tipo: nuevoTipo,
+    animador: '',
+    nombre: '',
+    apellido: '',
+    cedula: '',
+    celular: '',
+    nivelCurso: '',
+    paralelo: '',
+    tablas: [''],
+    grupoAdetitss: '',
+  });
+
+  // Reinicia también contadores y totales
+  setTablasCount(1);
+  setTotalPagar(0);
+};
+
 
   const calcularTotal = (numTablas) => {
     return Math.floor(numTablas / 2) * 5 + (numTablas % 2) * 3;
   };
 
-  useEffect(() => {
-    const total = calcularTotal(formData.tablas.filter(t => t.trim() !== '').length);
-    setTotalPagar(total);
-  }, [formData.tablas]);
 
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4">
@@ -213,14 +272,15 @@ const AddUserForm = () => {
             <select
               name="tipo"
               value={formData.tipo}
-              onChange={handleInputChange}
+              onChange={handleTipoChange}
               className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="alumno">Alumno</option>
               <option value="docente">Docente</option>
+              <option value="externo">Externo</option>
             </select>
           </fieldset>
-          {!showAnimador && (
+          {!showDocente && !showExterno && (
             <fieldset>
               <legend className="text-lg font-semibold text-yellow-500 mb-4">
                 Nombre del Animador
@@ -233,7 +293,7 @@ const AddUserForm = () => {
               />
             </fieldset>
           )}
-          {showAnimador && (
+          {showDocente && (
           <fieldset>
             {/* 🆕 Campo de grupo Adetits */}
             <legend className="text-lg font-semibold text-yellow-500 mb-4">Número de grupo ADETITSS</legend>
@@ -262,7 +322,7 @@ const AddUserForm = () => {
                     placeholder="Cédula (Ej. 0123456789)"
                     className="p-3 w-full border border-gray-300 dark:border-gray-600 rounded-lg"
                   />
-                  {isLoading && showAcademic && (
+                  {isLoading  && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
                       <Loader className="w-5 h-5 animate-spin text-blue-500" />
                       <span className="text-sm text-blue-500">Cargando...</span>
@@ -281,7 +341,21 @@ const AddUserForm = () => {
                 >
                   <Search className="w-5 h-5" />
                 </motion.button>)}
+
+                {showDocente && (<motion.button
+                  type="button"
+                  onClick={() => formData.cedula.length >= 10 && buscarDatosDocente(formData.cedula)}
+                  className={`px-4 py-3 rounded-lg flex items-center justify-center ${formData.cedula.length >= 10
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-300 cursor-not-allowed text-gray-500'
+                    }`}
+                  whileHover={formData.cedula.length >= 10 ? { scale: 1.05 } : {}}
+                  disabled={formData.cedula.length < 10}
+                >
+                  <Search className="w-5 h-5" />
+                </motion.button>)}
               </div>
+              
               <input
                 name="nombre"
                 value={formData.nombre}
@@ -312,15 +386,6 @@ const AddUserForm = () => {
             <fieldset>
               <legend className="text-lg font-semibold text-yellow-500  mb-4">Información Académica</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/*<select
-                  name="nivelCurso"
-                  value={formData.nivelCurso}
-                  onChange={handleInputChange}
-                  className="p-3 border border-gray-300 dark:border-gray-600 rounded-lg"
-                >
-                  <option value="">Seleccione un nivel</option>
-                  {niveles.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>*/}
                 <input
                   name="nivelCurso"
                   value={formData.nivelCurso}

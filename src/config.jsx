@@ -4,7 +4,6 @@
 // 2) variable inyectada en runtime: window.__env.REACT_APP_API_URL (opcional, útil para contenedores/túneles)
 // 3) fallback a la URL conocida para desarrollo rápido
 
-// src/config.jsx
 const resolveApiBase = () => {
   try {
     if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) {

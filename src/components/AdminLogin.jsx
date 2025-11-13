@@ -11,7 +11,7 @@ const AdminLogin = ({ onLogin }) => {
   const navigate = useNavigate();
 
   // Seguridad: si por alguna razón sigue undefined, usar fallback conocido
-  const baseUrl = API_BASE_URL || 'http://127.0.0.1:5000';
+  const baseUrl = API_BASE_URL
 
   // Si ya hay sesión guardada, redirigir directamente
   useEffect(() => {

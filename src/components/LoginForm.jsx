@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Lock, ArrowRight } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const LoginForm = ({ onLogin }) => {
   const [usuario, setUsuario] = useState('');
@@ -11,7 +12,7 @@ const LoginForm = ({ onLogin }) => {
     e.preventDefault();
 
     try {
-      const API_BASE_URL = 'http://127.0.0.1:5000';
+      const API_BASE_URL = API_BASE_URL;
       const url = `${API_BASE_URL}/api/login`
 
       const body = {

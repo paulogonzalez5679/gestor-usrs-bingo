@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { BarChart3, Users, Award, DollarSign, Trophy, AlertCircle, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 // Chart.js
 import {
@@ -18,8 +19,6 @@ import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-//const API_BASE_URL = 'http://localhost:5000';
-const API_BASE_URL = 'http://127.0.0.1:5000';
 axios.defaults.baseURL = API_BASE_URL;
 
 const Reports = () => {

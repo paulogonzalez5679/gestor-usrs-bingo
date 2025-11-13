@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';  
 import { Search as SearchIcon, Eye, Award , X, Loader } from 'lucide-react';  
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import axios from 'axios';
 
-//const API_BASE_URL = 'http://localhost:5000';
-const API_BASE_URL = 'http://127.0.0.1:5000';
 axios.defaults.baseURL = API_BASE_URL;
 
 /**

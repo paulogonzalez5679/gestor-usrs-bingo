@@ -4,26 +4,21 @@
 // 2) variable inyectada en runtime: window.__env.REACT_APP_API_URL (opcional, útil para contenedores/túneles)
 // 3) fallback a la URL conocida para desarrollo rápido
 
+// src/config.jsx
 const resolveApiBase = () => {
   try {
-    // 1) Build-time env (CRA/Webpack)
     if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) {
       return process.env.REACT_APP_API_URL;
     }
-  } catch (e) {
-    // ignore
-  }
+  } catch (e) {}
 
   try {
-    // 2) Runtime injection (window.__env)
     if (typeof window !== 'undefined' && window.__env && window.__env.REACT_APP_API_URL) {
       return window.__env.REACT_APP_API_URL;
     }
-  } catch (e) {
-    // ignore
-  }
+  } catch (e) {}
 
-  // 3) Fallback
+  // Fallback fijo para desarrollo local
   return 'http://127.0.0.1:5000';
 };
 

@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, Save, X } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
-const API_BASE_URL = 'http://127.0.0.1:5000';
 axios.defaults.baseURL = API_BASE_URL;
 
 /**

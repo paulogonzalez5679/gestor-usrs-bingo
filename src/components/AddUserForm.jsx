@@ -242,10 +242,16 @@ useEffect(() => {
 };
 
 
-  const calcularTotal = (numTablas) => {
-    return Math.floor(numTablas / 2) * 5 + (numTablas % 2) * 3;
-  };
+const calcularTotal = (numTablas) => {
+  const grupos5 = Math.floor(numTablas / 5);
+  const resto = numTablas % 5;
 
+  let total = grupos5 * 10;
+  total += Math.floor(resto / 2) * 5;
+  total += (resto % 2) * 3;
+
+  return total;
+};
 
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4">

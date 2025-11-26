@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';  
 import { motion } from 'framer-motion';  
 import { Search, Plus, Edit, Trash2, Loader } from 'lucide-react';  
-import { Link } from 'react-router-dom';  
+import { Link, useNavigate } from 'react-router-dom';  
 import { API_BASE_URL } from '../config';
 import axios from 'axios';
 
@@ -12,6 +12,7 @@ const UserList = () => {
   const [participantes, setParticipantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     cargarParticipantes();
@@ -71,6 +72,77 @@ const UserList = () => {
     }
   };
 
+  // -------------------------------------------------------------------
+  // NUEVA LÓGICA PARA CREAR PARTICIPANTES CON CONTROL DE TABLAS
+  // -------------------------------------------------------------------
+  const handleAddClick = async () => {
+    try {
+      const userStr = localStorage.getItem('usuario');
+      if (!userStr) {
+        alert("No hay usuario logueado");
+        return;
+      }
+
+      const user = JSON.parse(userStr);
+
+      // Obtener datos del usuario desde backend
+      const resp = await axios.get(`/api/participantes/por-usuario/${user.id}`);
+
+      if (!resp.data.success) {
+        alert(resp.data.message || 'Error al obtener datos del usuario');
+        return;
+      }
+
+      const usuarioDoc = resp.data.usuario || {};
+
+      const totalTables = usuarioDoc.totalTables || 0;
+      const usedTables = usuarioDoc.usedTables || 0;
+      const remaining = totalTables - usedTables;
+
+      // Si no tiene tablas disponibles → bloquear
+      if (totalTables > 0 && remaining <= 0) {
+        alert("Ya no tienes tablas disponibles para asignar.");
+        return;
+      }
+
+      // Primera vez → pedir cantidad
+      if (totalTables === 0) {
+        const input = prompt("Ingrese la cantidad total de tablas a reservar (ej: 161):");
+        const cantidad = parseInt(input, 10);
+
+        if (!cantidad || cantidad <= 0) {
+          alert("Debe ingresar un número válido");
+          return;
+        }
+
+        const asignar = await axios.post(`/api/users/${user.id}/assign_tables`, {
+          totalTables: cantidad
+        });
+
+        if (!asignar.data.success) {
+          alert(asignar.data.message || "Error al reservar tablas");
+          return;
+        }
+
+        alert(`Tablas reservadas desde ${asignar.data.from} hasta ${asignar.data.to}`);
+      }
+
+      // Todo bien → ir a crear participante
+      navigate('/admin/add-user', {
+        state: {
+          fromSerial: usuarioDoc.fromSerial,
+          toSerial: usuarioDoc.toSerial
+        }
+      });
+
+    } catch (err) {
+      console.error("Error en handleAddClick:", err);
+      alert(err.response?.data?.message || "Error inesperado al crear participante");
+    }
+  };
+  // -------------------------------------------------------------------
+
+
   const filteredUsers = participantes.filter(user =>  
     (user.nombre || '').toLowerCase().includes(search.toLowerCase()) ||  
     (user.apellido || '').toLowerCase().includes(search.toLowerCase()) ||  
@@ -99,15 +171,16 @@ const UserList = () => {
     <div className="p-6 lg:p-10">  
       <motion.div className="mb-6 flex items-center justify-between">  
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestionar Participantes</h1>  
-        <Link to="/admin/add-user">  
-          <motion.button  
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700"  
-            whileHover={{ scale: 1.05 }}  
-          >  
-            <Plus className="w-4 h-4" />  
-            Añadir Participante  
-          </motion.button>  
-        </Link>  
+
+        {/* BOTÓN MODIFICADO PARA CONTROLAR TABLAS */}
+        <motion.button  
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700"  
+          whileHover={{ scale: 1.05 }}  
+          onClick={handleAddClick}
+        >  
+          <Plus className="w-4 h-4" />  
+          Añadir Participante  
+        </motion.button>  
       </motion.div>  
 
       <div className="mb-6">  

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, PlusCircle, Save, Search, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useLocation } from "react-router-dom";
 
 // Configuración base de axios
 import { API_BASE_URL } from '../config';
@@ -134,18 +135,34 @@ useEffect(() => {
     }
   };
 
-  const handleInputChange = (e, index = null) => {
-    if (index !== null) {
-      const newTablas = [...formData.tablas];
-      newTablas[index] = e.target.value;
-      setFormData(prev => ({ ...prev, tablas: newTablas }));
-    } else {
-      const { name, value } = e.target;
-      setFormData(prev => ({ ...prev, [name]: value }));
+const handleInputChange = (e, index = null) => {
+  const value = e.target.value.trim();
 
-      // Ya no buscamos automáticamente al escribir la cédula
+  // Cuando se modifica una tabla específica
+  if (index !== null) {
+
+    // =============================
+    // VALIDACIÓN DE RANGO PERMITIDO
+    // =============================
+    if (rango.fromSerial && rango.toSerial) {
+      if (value < rango.fromSerial || value > rango.toSerial) {
+        alert(`⚠️ La tabla ${value} está fuera del rango permitido (${rango.fromSerial} a ${rango.toSerial})`);
+        return;
+      }
     }
-  };
+
+    // Guardar tabla válida
+    const newTablas = [...formData.tablas];
+    newTablas[index] = value;
+    setFormData(prev => ({ ...prev, tablas: newTablas }));
+    return;
+  }
+
+  // Cambios en otros campos
+  const { name, value: fieldValue } = e.target;
+  setFormData(prev => ({ ...prev, [name]: fieldValue }));
+};
+
 
   const addTabla = () => {
     setFormData(prev => ({ ...prev, tablas: [...prev.tablas, ''] }));
@@ -252,6 +269,9 @@ const calcularTotal = (numTablas) => {
 
   return total;
 };
+
+const location = useLocation();
+const rango = location.state || {};
 
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4">

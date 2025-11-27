@@ -141,17 +141,21 @@ const handleInputChange = (e, index = null) => {
   // Cuando se modifica una tabla específica
   if (index !== null) {
 
-    // =============================
-    // VALIDACIÓN DE RANGO PERMITIDO
-    // =============================
-    if (rango.fromSerial && rango.toSerial) {
-      if (value < rango.fromSerial || value > rango.toSerial) {
-        alert(`⚠️ La tabla ${value} está fuera del rango permitido (${rango.fromSerial} a ${rango.toSerial})`);
-        return;
+    // Si el usuario está borrando o aún no completa el código → NO VALIDAR
+    const longitudMinima = rango.fromSerial?.length || 0;
+
+    if (value.length === longitudMinima) {
+
+      // Solo validar si cumplió la longitud completa
+      if (rango.fromSerial && rango.toSerial) {
+        if (value < rango.fromSerial || value > rango.toSerial) {
+          alert(`⚠️ La tabla ${value} está fuera del rango permitido (${rango.fromSerial} a ${rango.toSerial})`);
+          return;
+        }
       }
     }
 
-    // Guardar tabla válida
+    // Guardar tabla sin validar si está incompleta
     const newTablas = [...formData.tablas];
     newTablas[index] = value;
     setFormData(prev => ({ ...prev, tablas: newTablas }));
@@ -164,77 +168,63 @@ const handleInputChange = (e, index = null) => {
 };
 
 
+
   const addTabla = () => {
     setFormData(prev => ({ ...prev, tablas: [...prev.tablas, ''] }));
     setTablasCount(prev => prev + 1);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Obtener usuario logueado
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
 
-      if (!userStr) {
-        alert('No hay usuario logueado');
-        return;
-      }
-      const user = JSON.parse(userStr);
-      // Filtrar tablas vacías
-      const tablasValidas = formData.tablas.filter(t => t.trim() !== '');
-
-      if (tablasValidas.length === 0) {
-        alert('Debe ingresar al menos una tabla');
-        return;
-      }
-
-      // Validar tablas antes de enviar
-      const tablasValidadas = [];
-      for (const tabla of tablasValidas) {
-        try {
-          const response = await axios.get(`/api/validarTabla/${tabla.trim()}`);
-          if (response.data.success && response.data.tabla.disponible) {
-            tablasValidadas.push(tabla.trim());
-          } else {
-            alert(`La tabla ${tabla} no está disponible o no existe`);
-            return;
-          }
-        } catch (err) {
-          alert(`Error al validar la tabla ${tabla}: ${err.response?.data?.message || 'Tabla no encontrada'}`);
-          return;
-        }
-      }
-
-      // Preparar datos para enviar
-      const datosEnvio = {
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        cedula: formData.cedula,
-        celular: formData.celular,
-        tipo: formData.tipo,
-        nivelCurso: formData.nivelCurso,
-        paralelo: formData.paralelo,
-        animador: user?.nombres,
-        grupoAdetitss: formData.grupoAdetitss,
-        tablas: tablasValidadas,
-        registrado_por: user.id
-      };
-
-      const response = await axios.post('/api/CreateParticipantes', datosEnvio);
-      if (response.data.success) {
-        alert('Participante creado exitosamente');
-        navigate('/admin/users');
-      } else {
-        alert(response.data.message || 'Error al crear el participante');
-      }
-    } catch (error) {
-      console.error('Error al crear participante:', error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert('Error al crear el participante. Por favor, intente nuevamente.');
-      }
+    if (!userStr) {
+      alert('No hay usuario logueado');
+      return;
     }
-  };
+
+    const user = JSON.parse(userStr);
+
+    // Filtrar tablas vacías
+    const tablasValidas = formData.tablas.filter(t => t.trim() !== '');
+
+    if (tablasValidas.length === 0) {
+      alert('Debe ingresar al menos una tabla');
+      return;
+    }
+
+    // NO se validan aquí, solo se envían
+    const datosEnvio = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      cedula: formData.cedula,
+      celular: formData.celular,
+      tipo: formData.tipo,
+      nivelCurso: formData.nivelCurso,
+      paralelo: formData.paralelo,
+      animador: user?.nombres,
+      grupoAdetitss: formData.grupoAdetitss,
+      tablas: tablasValidas,       // ← Se envían sin validar
+      registrado_por: user.id
+    };
+
+    const response = await axios.post('/api/CreateParticipantes', datosEnvio);
+
+    if (response.data.success) {
+      alert('Participante creado exitosamente');
+      navigate('/admin/users');
+    } else {
+      alert(response.data.message || 'Error al crear el participante');
+    }
+  } catch (error) {
+    console.error('Error al crear participante:', error);
+    if (error.response?.data?.message) {
+      alert(error.response.data.message);
+    } else {
+      alert('Error al crear el participante. Por favor, intente nuevamente.');
+    }
+  }
+};
 
   const handleTipoChange = (e) => {
   const nuevoTipo = e.target.value;

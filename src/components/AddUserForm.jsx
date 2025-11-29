@@ -148,9 +148,19 @@ const handleInputChange = (e, index = null) => {
 
       // Solo validar si cumplió la longitud completa
       if (rango.fromSerial && rango.toSerial) {
-        if (value < rango.fromSerial || value > rango.toSerial) {
-          alert(`⚠️ La tabla ${value} está fuera del rango permitido (${rango.fromSerial} a ${rango.toSerial})`);
-          return;
+        const from = rango.fromSerial;
+        const to = rango.toSerial;
+        if (from <= to) {
+          if (value < from || value > to) {
+            alert(`⚠️ La tabla ${value} está fuera del rango permitido (${from} a ${to})`);
+            return;
+          }
+        } else {
+          // rango invertido (admin reservó desde el final)
+          if (value > from || value < to) {
+            alert(`⚠️ La tabla ${value} está fuera del rango permitido (${from} a ${to})`);
+            return;
+          }
         }
       }
     }

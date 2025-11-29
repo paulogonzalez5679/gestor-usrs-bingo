@@ -10,9 +10,15 @@ axios.defaults.baseURL = API_BASE_URL;
 const UserList = () => {  
   const [search, setSearch] = useState('');  
   const [participantes, setParticipantes] = useState([]);
+  const [usuarioDoc, setUsuarioDoc] = useState(null);
+  const [reserveCount, setReserveCount] = useState('');
+  const [isReserving, setIsReserving] = useState(false);
+  const [reserveError, setReserveError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const userStr = localStorage.getItem('usuario');
+  const user = userStr ? JSON.parse(userStr) : null;
 
   useEffect(() => {
     cargarParticipantes();
@@ -28,16 +34,13 @@ const UserList = () => {
       }
 
       const user = JSON.parse(userStr);
-      const params = {
-        usuario_id: user.id,
-        tipo_usuario: user.tipo_usuario
-      };
-
-      const response = await axios.get('/api/participantes', { params });
-      if (response.data.success) {
-        setParticipantes(response.data.participantes || []);
+      // Usaremos el endpoint que retorna usuario y sus participantes
+      const resp = await axios.get(`/api/participantes/por-usuario/${user.id}`);
+      if (resp.data.success) {
+        setParticipantes(resp.data.participantes || []);
+        setUsuarioDoc(resp.data.usuario || {});
       } else {
-        setError(response.data.message || 'Error al cargar participantes');
+        setError(resp.data.message || 'Error al cargar participantes');
       }
     } catch (err) {
       console.error('Error al cargar participantes:', err);
@@ -94,6 +97,7 @@ const UserList = () => {
       }
 
       const usuarioDoc = resp.data.usuario || {};
+      setUsuarioDoc(usuarioDoc);
 
       const totalTables = usuarioDoc.totalTables || 0;
       const usedTables = usuarioDoc.usedTables || 0;
@@ -105,26 +109,59 @@ const UserList = () => {
         return;
       }
 
-      // Primera vez → pedir cantidad
+      // Si no tiene tablas reservadas y es admin, permitir reservar directamente desde "Añadir"
       if (totalTables === 0) {
-        const input = prompt("Ingrese la cantidad total de tablas a reservar (ej: 161):");
-        const cantidad = parseInt(input, 10);
-
-        if (!cantidad || cantidad <= 0) {
-          alert("Debe ingresar un número válido");
+          if (user.tipo_usuario === 0 || user.tipo_usuario === '0') {
+          // Si ya escribió una cantidad en el campo, la usamos; de lo contrario pedimos cantidad mediante prompt
+          if (reserveCount && String(reserveCount).replace(/[^0-9]/g, '') !== '') {
+            // Sanitize again and use
+            const sanitizedCount = parseInt(String(reserveCount).replace(/[^0-9]/g, ''), 10);
+            console.log('[handleAddClick] Using reserveCount sanitized:', sanitizedCount);
+            setReserveError(null);
+            const ok = await handleReserve(sanitizedCount);
+            if (!ok) return;
+          } else {
+            const input = prompt("Ingrese la cantidad total de tablas a reservar (ej: 161) — Pulse Aceptar para usar 1 por defecto:");
+            if (input === null) {
+              // usuario canceló el prompt → asumimos 1
+              const ok = await handleReserve(1);
+              if (!ok) return;
+            } else {
+              const digits = String(input || '').replace(/[^0-9]/g, '');
+              if (!digits) {
+                // invalid input: show inline error and return
+                setReserveError('Ingrese una cantidad válida');
+                return;
+              }
+              const cantidad = parseInt(digits, 10);
+              if (!cantidad || cantidad <= 0) {
+                setReserveError('Ingrese una cantidad válida');
+                return;
+              }
+              const ok = await handleReserve(cantidad);
+              if (!ok) return;
+            }
+          }
+          // recargar usuarioDoc y proceed con la navegación si la reserva fue exitosa
+          const newUserResp = await axios.get(`/api/participantes/por-usuario/${user.id}`);
+          if (newUserResp.data.success) {
+            const newUserDoc = newUserResp.data.usuario || {};
+            setUsuarioDoc(newUserDoc);
+            // recalcular total y used
+            const totalTablesNew = newUserDoc.totalTables || 0;
+            const usedTablesNew = newUserDoc.usedTables || 0;
+            const remainingNew = totalTablesNew - usedTablesNew;
+            if (totalTablesNew > 0 && remainingNew > 0) {
+              // todo bien, continúa a crear participante
+            } else {
+              alert('No se pudieron reservar las tablas o no hay tablas disponibles.');
+              return;
+            }
+          }
+        } else {
+          alert('No tienes tablas reservadas. Pide a un administrador que reserve tablas.');
           return;
         }
-
-        const asignar = await axios.post(`/api/users/${user.id}/assign_tables`, {
-          totalTables: cantidad
-        });
-
-        if (!asignar.data.success) {
-          alert(asignar.data.message || "Error al reservar tablas");
-          return;
-        }
-
-        alert(`Tablas reservadas desde ${asignar.data.from} hasta ${asignar.data.to}`);
       }
 
       // Todo bien → ir a crear participante
@@ -140,6 +177,62 @@ const UserList = () => {
       alert(err.response?.data?.message || "Error inesperado al crear participante");
     }
   };
+
+  // handleReserve ahora acepta opcionalmente una cantidad para evitar prompts adicionales
+  const handleReserve = async (cantidadParam = null) => {
+    try {
+      const userStr = localStorage.getItem('usuario');
+      if (!userStr) {
+        alert('No hay usuario logueado');
+        return;
+      }
+      const user = JSON.parse(userStr);
+
+      // Sanitizar y parsear la entrada para evitar separadores (1.560, 1,560) u otros caracteres
+      const rawCantidad = cantidadParam != null ? String(cantidadParam) : String(reserveCount || '');
+      const digitsOnly = rawCantidad.replace(/[^0-9]/g, '');
+
+      console.log('[handleReserve] rawCantidad:', rawCantidad, 'digitsOnly:', digitsOnly);
+
+      if (!digitsOnly) {
+        console.log(digitsOnly);
+        
+        // show inline error (safer) and log
+        setReserveError('Ingrese una cantidad válida');
+        console.warn('[handleReserve] invalid quantity:', rawCantidad);
+        return false;
+      }
+      const cantidad = parseInt(digitsOnly, 10);
+      if (!cantidad || cantidad <= 0) {
+        setReserveError('Ingrese una cantidad válida');
+        return false;
+      }
+
+      setIsReserving(true);
+      const resp = await axios.post(`/api/users/${user.id}/assign_tables`, {
+        totalTables: cantidad,
+        requesting_user_id: user.id
+      });
+
+      if (!resp.data.success) {
+        setReserveError(resp.data.message || 'Error al reservar tablas');
+        return false;
+      } else {
+        setReserveError(null);
+        alert(`Tablas reservadas desde ${resp.data.from} hasta ${resp.data.to}`);
+        setReserveCount('');
+        cargarParticipantes();
+        return true;
+      }
+    } catch (err) {
+      console.error('Error en handleReserve:', err);
+      const msg = err.response?.data?.message || 'Error al reservar tablas';
+      setReserveError(msg);
+      return false;
+    } finally {
+      setIsReserving(false);
+    }
+  }
   // -------------------------------------------------------------------
 
 
@@ -172,15 +265,68 @@ const UserList = () => {
       <motion.div className="mb-6 flex items-center justify-between">  
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestionar Participantes</h1>  
 
-        {/* BOTÓN MODIFICADO PARA CONTROLAR TABLAS */}
-        <motion.button  
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700"  
-          whileHover={{ scale: 1.05 }}  
-          onClick={handleAddClick}
-        >  
-          <Plus className="w-4 h-4" />  
-          Añadir Participante  
-        </motion.button>  
+        <div className='flex items-center gap-4'>
+          {/* Si es admin y totalTables === 0 mostrar campo para reservar tablas */}
+          {user && (user.tipo_usuario === 0 || user.tipo_usuario === '0') && (
+            <div className='flex items-center gap-2'>
+              <input
+                type='text'
+                inputMode='numeric'
+                value={reserveCount}
+                onChange={(e) => {
+                  // For UX: only keep digits as the user types (no separators)
+                  const sanitized = String(e.target.value || '').replace(/[^0-9]/g, '');
+                  setReserveCount(sanitized);
+                  setReserveError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setReserveError(null);
+                    handleReserve();
+                  }
+                }}
+                placeholder='Cantidad tablas'
+                className='w-36 p-2 border rounded-lg'
+              />
+              {reserveError && (
+                <div className='text-xs text-red-500 mt-1'>{reserveError}</div>
+              )}
+              <button
+                onClick={() => {
+                  setReserveError(null);
+                  handleReserve();
+                }}
+                className='px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700'
+                disabled={isReserving || (usuarioDoc && usuarioDoc.totalTables > 0)}
+              >
+                {isReserving ? 'Reservando...' : 'Reservar tablas'}
+              </button>
+            </div>
+          )}
+
+          {/* Mostrar información de tablas reservadas si ya existen */}
+          {usuarioDoc && usuarioDoc.totalTables > 0 && (
+            <div className='text-sm text-gray-700 dark:text-gray-300'>
+              Reservadas: <strong>{usuarioDoc.totalTables}</strong> | Usadas: <strong>{usuarioDoc.usedTables || 0}</strong>
+              {usuarioDoc.fromSerial && usuarioDoc.toSerial && (
+                <span> | Rango: {usuarioDoc.fromSerial} → {usuarioDoc.toSerial}</span>
+              )}
+            </div>
+          )}
+
+          
+
+          <motion.button  
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700"  
+            whileHover={{ scale: 1.05 }}  
+            onClick={handleAddClick}
+            disabled={usuarioDoc && usuarioDoc.totalTables === 0 && (!user || (user.tipo_usuario !== 0 && user.tipo_usuario !== '0'))}
+          >  
+            <Plus className="w-4 h-4" />  
+            Añadir Participante  
+          </motion.button>  
+        </div>
       </motion.div>  
 
       <div className="mb-6">  

@@ -18,7 +18,7 @@ const resolveApiBase = () => {
   } catch (e) {}
 
   // Fallback fijo para desarrollo local
-  return 'http://192.168.200.72:5000';
+  return ' https://assembled-bugs-sea-sample.trycloudflare.com';
 };
 
 export const API_BASE_URL = resolveApiBase();

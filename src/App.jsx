@@ -10,6 +10,8 @@ import BingoCardView from './components/BingoCardView';
 import CartonSearch from './components/CartonSearch';
 import AddCartonForm from './components/AddCartonForm';
 import Reports from './components/Reports';
+import BuscarParticipante from './components/BuscarParticipante';
+import PublicBuscar from './components/PublicBuscar';
 
 const AdminLayout = ({ onLogout }) => (
   <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -96,6 +98,7 @@ const App = () => {
           <Route path="user/:userId/cartones" element={<UserCartons />} />
           <Route path="user/:userId/add-carton" element={<AddCartonForm />} />
           <Route path="cartones" element={<CartonSearch />} />
+          <Route path="buscar-participante" element={<BuscarParticipante />} />
           <Route path="cartones/:cartonId" element={<BingoCardView />} />
           <Route 
             path="reportes" 
@@ -108,6 +111,7 @@ const App = () => {
         </Route>
 
         {/* Cualquier otra ruta → login */}
+        <Route path="/buscar" element={<PublicBuscar />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
     </Router>

@@ -29,6 +29,7 @@ const AddUserForm = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [tablasCount, setTablasCount] = useState(1);
+  const [cantidadSolicitada, setCantidadSolicitada] = useState(1);
   const [totalPagar, setTotalPagar] = useState(0);
   const navigate = useNavigate();
   const userStr = localStorage.getItem('usuario');
@@ -273,6 +274,58 @@ const calcularTotal = (numTablas) => {
 const location = useLocation();
 const rango = location.state || {};
 
+  const fetchTablasConsecutivas = async () => {
+    if (!userStr) {
+      alert('No hay usuario logueado para solicitar tablas.');
+      return;
+    }
+
+    const cantidad = Number(cantidadSolicitada) || 0;
+    if (cantidad <= 0) {
+      alert('Ingrese una cantidad válida mayor a 0');
+      return;
+    }
+
+    // Si ya existen tablas ingresadas, pedir confirmación antes de sobrescribir
+    const tablasExistentes = (formData.tablas || []).filter(t => t && t.trim() !== '');
+    if (tablasExistentes.length > 0) {
+      const confirmar = window.confirm('Ya existen tablas en el formulario. ¿Desea reemplazarlas con las tablas consecutivas obtenidas?');
+      if (!confirmar) return;
+    }
+
+    try {
+      setIsLoading(true);
+      const payload = {
+        usuario_id: user?.id || user?._id || userStr,
+        cantidad_tablas: cantidad
+      };
+
+      const response = await axios.post('/api/obtenerTablasConsecutivas', payload);
+      const data = response.data || {};
+
+      if (data.success && Array.isArray(data.tablas_consecutivas)) {
+        const tablas = data.tablas_consecutivas.map(t => String(t));
+        setFormData(prev => ({ ...prev, tablas }));
+        setTablasCount(tablas.length);
+        // totalPagar se recalculará por el efecto que escucha formData.tablas
+        if ((data.cantidad || tablas.length) < cantidad) {
+          alert(`Se obtuvieron ${tablas.length} tablas (menos de las solicitadas).`);
+        }
+      } else {
+        alert(data.message || 'No se pudieron obtener tablas consecutivas.');
+      }
+    } catch (error) {
+      console.error('Error al obtener tablas consecutivas:', error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('Error al conectar con el servidor al solicitar tablas.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex-grow flex items-center justify-center py-12 px-4">
       <motion.div className="w-full max-w-2xl space-y-8 bg-white dark:bg-gray-900 rounded-lg p-8 border border-gray-200 dark:border-gray-700">
@@ -434,6 +487,36 @@ const rango = location.state || {};
           {/* Tablas de Bingo */}
           <fieldset>
             <legend className="text-lg font-semibold text-yellow-500  mb-4">Tablas de Bingo</legend>
+            <div className="mb-4 flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                value={cantidadSolicitada}
+                onChange={(e) => setCantidadSolicitada(Number(e.target.value))}
+                className="w-36 p-3 border border-gray-300 dark:border-gray-600 rounded-lg"
+                placeholder="Cantidad (Ej. 5)"
+              />
+              <motion.button
+                type="button"
+                onClick={fetchTablasConsecutivas}
+                className={`px-4 py-3 rounded-lg flex items-center justify-center ${!cantidadSolicitada || cantidadSolicitada <= 0
+                  ? 'bg-gray-300 cursor-not-allowed text-gray-500'
+                  : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                whileHover={cantidadSolicitada > 0 ? { scale: 1.03 } : {}}
+                disabled={!cantidadSolicitada || cantidadSolicitada <= 0 || isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin text-white mr-2" />
+                    Obteniendo...
+                  </>
+                ) : (
+                  'Obtener Tablas Consecutivas'
+                )}
+              </motion.button>
+            </div>
+
             <div className="space-y-4">
               {formData.tablas.map((tabla, index) => (
                 <div key={index} className="flex items-end gap-4">

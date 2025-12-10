@@ -75,6 +75,7 @@ const Header = ({ title, backLink, showNav = true, onLogout }) => {
       {showNav && (  
         <nav className="hidden md:flex items-center gap-6">  
           <Link to="/admin/users" className="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300">Participantes</Link>  
+          <Link to="/admin/buscar-participante" className="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300">Buscar</Link>
           <Link to="/admin/cartones" className="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300">Cartones</Link>  
           {canViewReports() && (
             <Link to="/admin/reportes" className="text-sm font-medium text-gray-600 hover:text-blue-600 dark:text-gray-300">Reportes</Link>  

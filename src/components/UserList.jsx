@@ -346,8 +346,11 @@ const UserList = () => {
         <table className="w-full">  
           <thead className="bg-gray-50 dark:bg-gray-800">  
             <tr>  
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Nombre</th>  
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Apellido</th>  
+              
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Nivel</th> 
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Paralelo</th> 
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Nombre</th> 
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Apellido</th>   
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Cédula</th>  
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Cartones Registrados</th>  
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Acciones</th>  
@@ -362,7 +365,9 @@ const UserList = () => {
               </tr>
             ) : (
               filteredUsers.map((user) => (  
-                <motion.tr key={user._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>  
+                <motion.tr key={user._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}> 
+                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{user.nivelCurso || '-'}</td> 
+                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{user.paralelo || '-'}</td> 
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{user.nombre || '-'}</td>  
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.apellido || '-'}</td>  
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.cedula || '-'}</td>  
